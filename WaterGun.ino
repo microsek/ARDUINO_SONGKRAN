@@ -18,10 +18,10 @@ unsigned int localUdpPort = 4210;
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE]; //buffer to hold incoming packet,
 const int PACKET_SIZE = 256;
 //***General Variables***
-#define LEDpin  2
-#define ServoLR_pin  5
-#define ServoUP_pin  4
-#define Pump_pin  14
+#define LEDpin  D0
+#define ServoLR_pin  13//D7
+#define ServoUP_pin  15//D8
+#define Pump_pin  5//D1
 
 int prev_S=128;
 
@@ -35,7 +35,7 @@ void setup()
  servoUpDown.attach(ServoUP_pin);  // Set right servo to digital pin 9
  
  digitalWrite(LEDpin,HIGH);
- digitalWrite(Pump_pin,HIGH);
+ digitalWrite(Pump_pin,LOW);
  
  WiFi.mode(WIFI_AP);
 
@@ -50,7 +50,7 @@ void loop()
 {
   
   int rlen, Relay=0,UpDown=128,RL=128;
-
+  bool relay_stage=false;
   while (1) 
   {
     rlen = Udp.parsePacket();
@@ -66,23 +66,32 @@ void loop()
     UpDown=packetBuffer[2];
     RL=packetBuffer[3];
     
-    UpDown = map(UpDown, 0, 255, 170, 10);
-    RL = map(RL, 0, 255, 170, 10);
+    UpDown = map(UpDown, 0, 255, 0, 180);
+    RL = map(RL, 0, 255, 0, 180);
 
     servoLeftRight.write(RL);
     servoUpDown.write(UpDown);
 
-    if(Relay==64)
+   if(Relay==16)
     {
-      Serial.print("Pump ON");
-      digitalWrite(Pump_pin,LOW);
+     relay_stage=!relay_stage;
+    }
+    if(relay_stage)
+    {
+      digitalWrite(Pump_pin,HIGH);
     }
     else
     {
-      Serial.print("Pump OFF");
-      digitalWrite(Pump_pin,HIGH);
-    }
-   
-
+      if(Relay==64)
+      {
+        digitalWrite(Pump_pin,HIGH);
+      }
+      else
+      {
+        digitalWrite(Pump_pin,LOW);
+      }
+  }
+    
+    
   }
 }
